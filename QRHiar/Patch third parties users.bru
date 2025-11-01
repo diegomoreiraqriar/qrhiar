@@ -1,0 +1,22 @@
+meta {
+  name: Patch third parties users
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://localhost:4000/third-parties/1bdf51c2-a121-4975-adc1-df2c80d70df7/status
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "action": "vacation",
+    "reason": "Férias coletivas de dezembro"
+  }
+}

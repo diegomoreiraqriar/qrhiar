@@ -1,0 +1,28 @@
+meta {
+  name: Get third parties users
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:4000/scim/v2/Users
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "userName": "joao@fornecedor.com",
+    "name": {"formatted": "João da Silva"},
+    "active": true,
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+        "department": "Técnico de Campo",
+        "manager": {"displayName": "Maria Souza"},
+        "companyId": "58e27c3c-d24d-44d1-b9c5-528e4231c802"
+    }
+  } 
+}

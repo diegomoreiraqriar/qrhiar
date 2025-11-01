@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>QRHiar – Terceiros</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script>
+    document.addEventListener("htmx:configRequest", (e) => {
+      e.detail.headers['X-Tenant-ID'] = 'demo';
+      e.detail.headers['Content-Type'] = 'application/json';
+    });
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-semibold mb-4">QRHiar (demo)</h1>
+
+    <div class="grid grid-cols-2 gap-6">
+      <section class="bg-white rounded-xl p-4 shadow">
+        <h2 class="font-medium mb-3">Empresas</h2>
+        <form class="flex gap-2 mb-3" hx-post="/companies" hx-trigger="submit" hx-target="#companies" onsubmit="this.querySelector('button').disabled=true; setTimeout(()=>this.reset(),0);">
+          <input class="border rounded px-2 py-1 flex-1" placeholder="Razão Social" id="rs"/>
+          <input class="border rounded px-2 py-1" placeholder="CNPJ" id="cnpj"/>
+          <button class="px-3 py-1 rounded bg-black text-white">Adicionar</button>
+          <script>
+            document.currentScript.parentElement.addEventListener('htmx:configRequest', (e) => {
+              e.detail.parameters = {};
+              e.detail.headers['Content-Type'] = 'application/json';
+              e.detail.verb = 'POST';
+              e.detail.body = JSON.stringify({ razaoSocial: document.getElementById('rs').value, cnpj: document.getElementById('cnpj').value });
+            });
+          </script>
+        </form>
+        <div id="companies" hx-get="/companies" hx-trigger="load" class="space-y-2"></div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow">
+        <h2 class="font-medium mb-3">Terceiros</h2>
+        <form class="grid grid-cols-3 gap-2 mb-3" hx-post="/third-parties" hx-trigger="submit" hx-target="#tpu" onsubmit="this.querySelector('button').disabled=true; setTimeout(()=>this.reset(),0);">
+          <input class="border rounded px-2 py-1" placeholder="Nome" id="nome"/>
+          <input class="border rounded px-2 py-1" placeholder="Email" id="email"/>
+          <input class="border rounded px-2 py-1" placeholder="CompanyID" id="cid"/>
+          <button class="col-span-3 px-3 py-1 rounded bg-black text-white">Adicionar</button>
+          <script>
+            document.currentScript.parentElement.addEventListener('htmx:configRequest', (e) => {
+              e.detail.headers['Content-Type'] = 'application/json';
+              e.detail.verb = 'POST';
+              e.detail.body = JSON.stringify({
+                nome: document.getElementById('nome').value,
+                email: document.getElementById('email').value,
+                companyId: document.getElementById('cid').value
+              });
+            });
+          </script>
+        </form>
+        <div id="tpu" hx-get="/third-parties" hx-trigger="load" class="space-y-2"></div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
