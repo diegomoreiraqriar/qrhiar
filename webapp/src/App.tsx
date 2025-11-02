@@ -1,13 +1,21 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import React from "react";
+import Login from "./pages/Login";
+import { getToken } from "./api/auth";
 
+export default function App() {
+  const token = getToken();
 
-function App() {
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <Dashboard />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={token ? <Dashboard /> : <Navigate to="/login" />}
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;

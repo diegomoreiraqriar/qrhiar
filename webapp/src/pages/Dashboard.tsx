@@ -4,6 +4,7 @@ import { getActionLabel, getActionColor } from "../utils/auditUtils";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
 import CreateUserModal from "../components/CreateUserModal";
+import api from "../api/client";
 
 interface Manager {
   displayName: string;
@@ -79,8 +80,8 @@ export default function Dashboard() {
   const fetchUserLogs = async (userId: string) => {
     setLoadingLogs(true);
     try {
-      const res = await fetch(`http://localhost:4000/third-parties/${userId}/logs`);
-      const data = await res.json();
+      const res = await api.get(`/api/third-parties/${userId}/logs`);
+      const data = res.data;
       setLogs(data.logs || []);
     } catch (err) {
       console.error("Erro ao buscar logs:", err);
@@ -90,9 +91,10 @@ export default function Dashboard() {
     }
   };
 
-  // 🔧 Ações de status
+  //  Ações de status
   const handleAction = async (userId: string, action: string) => {
     setUpdating(true);
+
     const actionNames: Record<string, string> = {
       block: "Bloquear usuário",
       activate: "Ativar usuário",
@@ -101,19 +103,16 @@ export default function Dashboard() {
     };
 
     try {
-      const res = await fetch(`http://localhost:4000/third-parties/${userId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+      // ✅ Envia requisição PATCH autenticada com token (via api interceptor)
+      const res = await api.patch(`/api/third-parties/${userId}/status`, { action });
+      const data = res.data;
 
-      if (!res.ok) throw new Error("Falha ao atualizar status");
-      const data = await res.json();
-
+      // Atualiza lista principal
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, status: data.user.status } : u))
       );
 
+      // Atualiza usuário do modal (se aberto)
       if (selectedUser?.id === userId) {
         setSelectedUser({ ...selectedUser, status: data.user.status });
         fetchUserLogs(userId);
@@ -127,6 +126,7 @@ export default function Dashboard() {
       setUpdating(false);
     }
   };
+
 
   const handleViewDetails = (user: User) => {
     setSelectedUser(user);

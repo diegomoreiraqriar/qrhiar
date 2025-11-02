@@ -2,29 +2,40 @@ package main
 
 import (
 	"log"
-	"qrhiar/internal/app"
+	"os"
+
+	"qrhiar/internal/app/routes"
 	"qrhiar/internal/db"
 
-	"github.com/google/uuid"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// db.Connect()
+	_ = godotenv.Load()
 	db.InitDB()
-	db.Migrate()
 
-	app := app.NewServer()
-	log.Println("🚀 QRHiar API rodando em http://localhost:4000")
+	app := fiber.New()
 
-	if err := app.Listen(":4000"); err != nil {
-		log.Fatalf("❌ Erro ao iniciar o servidor: %v", err)
+	// ✅ Middleware CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:5173", // endereço do seu front
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowCredentials: true,
+	}))
+
+	// Rotas
+	routes.RegisterRoutes(app)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "4000"
 	}
-}
 
-func parseUUID(id string) uuid.UUID {
-	u, err := uuid.Parse(id)
-	if err != nil {
-		return uuid.Nil
+	log.Printf("🚀 QRhiar API rodando na porta %s", port)
+	if err := app.Listen(":" + port); err != nil {
+		log.Fatalf("Erro ao iniciar servidor: %v", err)
 	}
-	return u
 }

@@ -1,37 +1,46 @@
-package app
+package routes
 
 import (
+	"qrhiar/internal/auth"
+	"qrhiar/internal/handlers"
+
 	"github.com/gofiber/fiber/v2"
-
-	"qrhiar/internal/app/routes"
-	"qrhiar/internal/logger"
-	"qrhiar/internal/tenant"
-
-	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-func NewServer() *fiber.App {
-	// Inicializa Fiber
-	app := fiber.New()
+func RegisterRoutes(app *fiber.App) {
+	// Serviço de autenticação
+	authService := auth.NewAuthService()
 
-	// Inicializa o logger global (Zap)
-	log := logger.NewLogger()
-	log.Info("🚀 Iniciando QRHiar API com middleware multi-tenant")
+	// Rota pública de login
+	app.Post("/auth/login", auth.LoginHandler(authService))
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:5173", // ou "*" se quiser abrir geral
-		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-	}))
+	// Health check (sem autenticação)
+	app.Get("/health", handlers.HealthHandler)
 
-	// Aplica middleware de Tenant (lê X-Tenant-ID ou usa default)
-	app.Use(tenant.Middleware(log))
+	// Agrupamento de rotas protegidas (middleware JWT)
+	api := app.Group("/api", auth.AuthMiddleware(authService))
 
-	// Registra rotas
-	routes.RegisterRoutes(app)
+	// Companies
+	api.Post("/companies", handlers.CreateCompany)
+	api.Get("/companies", handlers.ListCompanies)
+	api.Get("/companies/:id", handlers.GetCompany)
+	api.Put("/companies/:id", handlers.UpdateCompany)
+	api.Delete("/companies/:id", handlers.DeleteCompany)
 
-	// Mensagem de inicialização
-	log.Info("✅ Rotas registradas e middleware ativo")
+	// Third-Party Users
+	api.Post("/third-parties", handlers.CreateThirdPartyUser)
+	api.Get("/third-parties", handlers.ListThirdPartyUsers)
+	api.Get("/third-parties/:id", handlers.GetThirdPartyUser)
+	api.Put("/third-parties/:id", handlers.UpdateThirdPartyUser)
+	api.Delete("/third-parties/:id", handlers.DeleteThirdPartyUser)
+	api.Get("/scim/v2/Users", handlers.ListSCIMUsers)
+	api.Post("/scim/v2/Users", handlers.CreateSCIMUser)
+	api.Patch("/scim/v2/Users/:id", handlers.PatchSCIMUser)
+	api.Patch("/third-parties/:id/status", handlers.UpdateUserStatus)
+	api.Get("/third-parties/:id/logs", handlers.GetUserLogsHandler)
 
-	return app
+	// Users (JML demo)
+	api.Get("/users", handlers.ListUsers)
+	api.Post("/users", handlers.CreateUser)
+	api.Patch("/users/:id/status", handlers.UpdateUserStatus)
 }
