@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import api from "../api/client"; // ✅ usa axios configurado com token e baseURL
 
 interface Props {
   onClose: () => void;
@@ -30,19 +31,17 @@ export default function CreateUserModal({ onClose, onUserCreated }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔹 Carregar empresas e gestores
+  // 🔹 Carregar empresas e gestores (agora usando o axios "api")
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [companiesRes, usersRes] = await Promise.all([
-          fetch("http://localhost:4000/companies"),
-          fetch("http://localhost:4000/third-parties"),
+        const [companiesRes, managersRes] = await Promise.all([
+          api.get("/api/companies"),
+          api.get("/api/third-parties"),
         ]);
-        const companiesData = await companiesRes.json();
-        const usersData = await usersRes.json();
 
-        setCompanies(companiesData || []);
-        setManagers(usersData || []);
+        setCompanies(companiesRes.data || []);
+        setManagers(managersRes.data || []);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         toast.error("Erro ao carregar empresas ou gestores");
@@ -51,34 +50,30 @@ export default function CreateUserModal({ onClose, onUserCreated }: Props) {
     fetchData();
   }, []);
 
-  // 🔹 Atualizar campos
+  // 🔹 Atualizar campos do formulário
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🔹 Submeter formulário
+  // 🔹 Submeter formulário (criar usuário)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("http://localhost:4000/third-parties", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await api.post("/api/third-parties", form);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erro ao criar usuário");
+      if (!res || res.status !== 201) {
+        throw new Error("Erro ao criar usuário");
       }
 
       toast.success("Usuário criado com sucesso!");
       onUserCreated();
       onClose();
     } catch (err: any) {
-      setError(err.message);
+      console.error("Erro ao criar usuário:", err);
+      setError(err.message || "Erro inesperado");
       toast.error("Falha ao criar usuário");
     } finally {
       setLoading(false);
@@ -88,9 +83,7 @@ export default function CreateUserModal({ onClose, onUserCreated }: Props) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">
-          Novo Usuário
-        </h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">Novo Usuário</h2>
 
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
 

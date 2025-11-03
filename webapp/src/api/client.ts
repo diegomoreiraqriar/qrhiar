@@ -1,19 +1,25 @@
-// src/api/client.ts
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-
 const api = axios.create({
-  baseURL: `${API_URL}`,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000",
 });
 
-// Intercepta todas as requisições e adiciona o token JWT
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// 🔐 Se o token for inválido, limpa o storage e redireciona
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
